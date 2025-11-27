@@ -1,0 +1,117 @@
+services:
+  traefik:
+    image: traefik:v3.5.2
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    networks:
+      - portfolio
+    ports:
+      - "80:80"
+      - "443:443"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - letsencrypt:/letsencrypt
+
+  database:
+    image: mariadb:11.8.5
+    networks:
+      - portfolio
+    secrets:
+      - portfolio_database_password
+    volumes:
+      - database_data:/var/lib/mysql
+    environment:
+      - MARIADB_RANDOM_ROOT_PASSWORD=1
+      - MARIADB_USER=wordpress_app
+      - MARIADB_PASSWORD_FILE=/run/secrets/portfolio_database_password
+      - MARIADB_DATABASE=alexmandrik_portfolio
+    ports:
+      - "33060:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  wordpress:
+    image: wordpress:6.8.3-php8.4-apache
+    networks:
+      - portfolio
+    deploy:
+      replicas: 2
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.wordpress.rule=Host(`alexmandrik.dev`)"
+        - "traefik.http.routers.wordpress.entrypoints=websecure"
+        - "traefik.http.routers.wordpress.tls.certresolver=le"
+        - "traefik.http.services.wordpress.loadbalancer.server.port=80"
+        # Sticky session configuration
+        - "traefik.http.services.wordpress.loadbalancer.sticky.cookie.name=wordpress_sticky"
+        - "traefik.http.services.wordpress.loadbalancer.sticky.cookie.secure=true"
+        - "traefik.http.services.wordpress.loadbalancer.sticky.cookie.httpOnly=true"
+        - "traefik.http.services.wordpress.loadbalancer.sticky.cookie.samesite=lax"
+        # For local testing only:
+        # - "traefik.http.routers.wordpress.rule=Host(`portfolio.localhost`)"
+        # - "traefik.http.routers.wordpress.tls=true"
+    secrets:
+      - portfolio_database_password
+    volumes:
+      - wp_content:/var/www/html/wp-content
+    environment:
+      - WORDPRESS_DB_HOST=database:3306
+      - WORDPRESS_DB_USER=wordpress_app
+      - WORDPRESS_DB_PASSWORD_FILE=/run/secrets/portfolio_database_password
+      - WORDPRESS_DB_NAME=alexmandrik_portfolio
+      - WORDPRESS_CONFIG_EXTRA=
+        define('DISABLE_WP_CRON', true);
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - database
+
+  wp-cron:
+    image: alpine:3.22.2
+    networks:
+      - portfolio
+    deploy:
+      restart_policy:
+        condition: any
+    volumes:
+      - wp_content:/var/www/html/wp-content
+    command: >
+      sh -c "
+        apk add --no-cache wget &&
+        echo '* * * * * wget -q -O - http://wordpress/wp-cron.php?doing_wp_cron > /dev/null 2>&1' > /etc/crontabs/root &&
+        crond -f -l 2
+      "
+    healthcheck:
+      test: ["CMD", "pgrep", "crond"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      - wordpress
+
+networks:
+  portfolio:
+    external: true
+
+secrets:
+  portfolio_database_password:
+    external: true
+
+volumes:
+  letsencrypt:
+  database_data:
+  wp_content:
