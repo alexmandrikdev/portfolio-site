@@ -62,7 +62,7 @@ services:
     secrets:
       - portfolio_database_password
     volumes:
-      - wp_content:/var/www/html/wp-content
+      - wordpress_data:/var/www/html
     environment:
       - WORDPRESS_DB_HOST=database:3306
       - WORDPRESS_DB_USER=wordpress_app
@@ -86,8 +86,6 @@ services:
     deploy:
       restart_policy:
         condition: any
-    volumes:
-      - wp_content:/var/www/html/wp-content
     command: >
       sh -c "
         apk add --no-cache wget &&
@@ -113,4 +111,4 @@ secrets:
 volumes:
   letsencrypt:
   database_data:
-  wp_content:
+  wordpress_data:
