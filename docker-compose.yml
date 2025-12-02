@@ -103,6 +103,8 @@ services:
 
 networks:
   portfolio:
+    attachable: true
+    driver: overlay
 
 secrets:
   portfolio_database_password:
