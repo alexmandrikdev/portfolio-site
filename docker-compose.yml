@@ -51,8 +51,8 @@ services:
         - "traefik.http.routers.wordpress.entrypoints=websecure"
         - "traefik.http.routers.wordpress.tls.certresolver=le"
         - "traefik.http.services.wordpress.loadbalancer.server.port=80"
-        # Sticky session configuration
-        - "traefik.http.services.wordpress.loadbalancer.sticky.cookie.name=wordpress_sticky"
+        # Sticky session configuration (cookie name cannot start with "wordpress" due to Super Page Cache plugin with Cloudflare CDN cache)
+        - "traefik.http.services.wordpress.loadbalancer.sticky.cookie.name=portfolio_sticky"
         - "traefik.http.services.wordpress.loadbalancer.sticky.cookie.secure=true"
         - "traefik.http.services.wordpress.loadbalancer.sticky.cookie.httpOnly=true"
         - "traefik.http.services.wordpress.loadbalancer.sticky.cookie.samesite=lax"
