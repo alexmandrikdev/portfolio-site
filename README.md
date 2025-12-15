@@ -31,6 +31,25 @@ To use Zoho Mail API, you need to:
    echo "your-client-secret" | docker secret create portfolio_zoho_client_secret -
    ```
 
+## Crypto Key Configuration
+
+To use cryptographic functions, you need to generate a secure key and create a Docker secret:
+
+Generate a secure key and create the secret in one command:
+
+```bash
+openssl rand -base64 32 | docker secret create portfolio_crypto_key -
+```
+
+Alternatively, you can generate the key first and then create the secret separately:
+
+```bash
+# Generate key
+openssl rand -base64 32
+# Then create secret (replace generated-key with the output)
+echo "generated-key" | docker secret create portfolio_crypto_key -
+```
+
 ## WP CLI
 
 A convenience script `wp-cli.sh` is provided to dynamically retrieve the database password and run WP CLI commands.
