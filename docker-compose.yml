@@ -65,6 +65,7 @@ services:
       - portfolio_recaptcha_secret_key
       - portfolio_zoho_client_id
       - portfolio_zoho_client_secret
+      - portfolio_crypto_key
     volumes:
       - wordpress_data:/var/www/html
     environment:
@@ -76,12 +77,14 @@ services:
       - PORTFOLIO_RECAPTCHA_SECRET_KEY_FILE=/run/secrets/portfolio_recaptcha_secret_key
       - PORTFOLIO_ZOHO_CLIENT_ID_FILE=/run/secrets/portfolio_zoho_client_id
       - PORTFOLIO_ZOHO_CLIENT_SECRET_FILE=/run/secrets/portfolio_zoho_client_secret
+      - PORTFOLIO_CRYPTO_KEY_FILE=/run/secrets/portfolio_crypto_key
       - WORDPRESS_CONFIG_EXTRA=
         define('DISABLE_WP_CRON', true);
         define('PORTFOLIO_RECAPTCHA_SITE_KEY', getenv_docker('PORTFOLIO_RECAPTCHA_SITE_KEY', ''));
         define('PORTFOLIO_RECAPTCHA_SECRET_KEY', getenv_docker('PORTFOLIO_RECAPTCHA_SECRET_KEY', ''));
         define('PORTFOLIO_ZOHO_CLIENT_ID', getenv_docker('PORTFOLIO_ZOHO_CLIENT_ID', ''));
         define('PORTFOLIO_ZOHO_CLIENT_SECRET', getenv_docker('PORTFOLIO_ZOHO_CLIENT_SECRET', ''));
+        define('PORTFOLIO_CRYPTO_KEY', getenv_docker('PORTFOLIO_CRYPTO_KEY', ''));
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost"]
       interval: 30s
@@ -128,6 +131,8 @@ secrets:
   portfolio_zoho_client_id:
     external: true
   portfolio_zoho_client_secret:
+    external: true
+  portfolio_crypto_key:
     external: true
 
 volumes:
